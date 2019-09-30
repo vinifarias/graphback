@@ -3,11 +3,10 @@ type Note {
   title: String!
   description: String!
   ## Relationship
-  comment: [Comment]!
-
+  comments: [Comment]!
 }
 
-type Comment {
+type Comment @update(enable: false){
   id: ID!
   text: String!
 }

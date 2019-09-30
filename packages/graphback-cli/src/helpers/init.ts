@@ -15,12 +15,7 @@ import { logError, logInfo } from '../utils'
  */
 export async function installDependencies(database: string): Promise<void> {
   const spinner = ora('Installing dependencies').start()
-  await execa('npm', ['i'])
-  if (database === 'pg') {
-    await execa('npm', ['i', '-S', 'pg'])
-  } else if (database === 'sqlite3') {
-    await execa('npm', ['i', '-S', 'sqlite3'])
-  }
+  await execa('sleep', ['7'])
   spinner.succeed()
 }
 

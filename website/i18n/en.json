@@ -30,8 +30,14 @@
         "title": "What is Graphback",
         "sidebar_label": "What is Graphback"
       },
+      "migrations": {
+        "title": "Migrating to GraphQL"
+      },
       "modules": {
         "title": "GraphQL Modules"
+      },
+      "openapi": {
+        "title": "OpenAPI migrations"
       },
       "relationships": {
         "title": "Relationships"
@@ -50,6 +56,7 @@
     "categories": {
       "Getting Started": "Getting Started",
       "Concepts": "Concepts",
+      "Migrations": "Migrations",
       "Reference": "Reference",
       "Releases": "Releases"
     }

@@ -2,6 +2,56 @@ import { getFieldName, getTableName, ResolverType } from '../../..'
 import { Type } from '../../../input/ContextTypes'
 import { GraphbackCRUDService } from '../../../layers/service/GraphbackCRUDService'
 
+interface CRUDType {
+  table: string,
+  resolvers: Resolver[],
+}
+
+interface Resolver {
+  type: ResolverType,
+  name: string,
+}
+
+export function generateCRUDType(types: Type[]): CRUDType[] {
+  const cruds: CRUDType[] = [];
+  for (const element of types) {
+    if (element.config.disableGen) {
+      continue;
+    }
+
+    const table = getTableName(element.name);
+
+    const crud: CRUDType = {
+      table, resolvers: []
+    }
+
+    const pushResolver = (type: ResolverType) => {
+      const name = getFieldName(element.name, type)
+      crud.resolvers.push({type,name})
+    }
+    
+    if (element.config.create) {
+      pushResolver(ResolverType.CREATE)
+    }
+    if (element.config.update) {
+      pushResolver(ResolverType.UPDATE)
+    }
+    if (element.config.delete) {
+      pushResolver(ResolverType.DELETE)
+    }
+    if (element.config.findAll) {
+      pushResolver(ResolverType.FIND_ALL)
+    }
+    if (element.config.find) {
+      pushResolver(ResolverType.FIND)
+    }
+    // TODO subscriptions
+    // TODO relationships
+  }
+
+  return cruds;
+}
+
 /**
  * Generate runtime resolver layer using Apollo GraphQL format 
  * and injected service layer. Service layer offers various capabilities like monitoring, cache etc. 
@@ -19,12 +69,11 @@ import { GraphbackCRUDService } from '../../../layers/service/GraphbackCRUDServi
  * 
  */
 export class ServicesRuntimeResolverGenerator {
-  private inputContext: Type[]
+  private cruds: CRUDType[]
   private service: GraphbackCRUDService
 
-  constructor(inputContext: Type[], service: GraphbackCRUDService) {
-    this.inputContext = inputContext
-
+  constructor(cruds: CRUDType[], service: GraphbackCRUDService) {
+    this.cruds = cruds
     this.service = service;
   }
 
@@ -33,47 +82,46 @@ export class ServicesRuntimeResolverGenerator {
       Query: {},
       Mutation: {}
     };
-    for (const resolverElement of this.inputContext) {
-      if (resolverElement.config.disableGen) {
-        continue;
+    for (const crud of this.cruds) {
+
+      for(const resolver of crud.resolvers) {
+        switch (resolver.type) {
+          case ResolverType.CREATE: {
+            resolvers.Mutation[resolver.name] = (_: any, args: any, context: any) => {
+              return this.service.createObject(crud.table, args, context)
+            }
+            break;
+          }
+          case ResolverType.UPDATE : {
+            resolvers.Mutation[resolver.name] = (_: any, args: any, context: any) => {
+              return this.service.updateObject(crud.table, args.id, args.input, context)
+            }
+            break;
+          }
+          case ResolverType.DELETE : {
+            resolvers.Mutation[resolver.name] = (_: any, args: any, context: any) => {
+              return this.service.deleteObject(crud.table, args.id, context)
+            }
+            break;
+          }
+          case ResolverType.FIND_ALL : {
+            resolvers.Query[resolver.name] = (_: any, args: any, context: any) => {
+              return this.service.findAll(crud.table, context)
+            }
+            break;
+          }
+          case ResolverType.FIND : {
+            resolvers.Query[resolver.name] = (_: any, args: any, context: any) => {
+              return this.service.findBy(crud.table, args.filter, context)
+            }
+            break;
+          }
+          default: {
+            throw new Error(`unhandled type ${resolver.type}`);
+          }
+        }
       }
 
-      const tableName = getTableName(resolverElement.name)
-      if (resolverElement.config.create) {
-        const resolverCreateField = getFieldName(resolverElement.name, ResolverType.CREATE);
-        // tslint:disable-next-line: no-any
-        resolvers.Mutation[resolverCreateField] = (_: any, args: any, context: any) => {
-          return this.service.createObject(tableName, args, context)
-        }
-      }
-      if (resolverElement.config.update) {
-        const updateField = getFieldName(resolverElement.name, ResolverType.UPDATE);
-        // tslint:disable-next-line: no-any
-        resolvers.Mutation[updateField] = (_: any, args: any, context: any) => {
-          return this.service.updateObject(tableName, args.id, args.input, context)
-        }
-      }
-      if (resolverElement.config.delete) {
-        const deleteField = getFieldName(resolverElement.name, ResolverType.DELETE);
-        // tslint:disable-next-line: no-any
-        resolvers.Mutation[deleteField] = (_: any, args: any, context: any) => {
-          return this.service.deleteObject(tableName, args.id, context)
-        }
-      }
-      if (resolverElement.config.findAll) {
-        const findAllField = getFieldName(resolverElement.name, ResolverType.FIND_ALL, 's');
-        // tslint:disable-next-line: no-any
-        resolvers.Query[findAllField] = (_: any, args: any, context: any) => {
-          return this.service.findAll(tableName, context)
-        }
-      }
-      if (resolverElement.config.find) {
-        const findField = getFieldName(resolverElement.name, ResolverType.FIND, 's');
-        // tslint:disable-next-line: no-any
-        resolvers.Query[findField] = (_: any, args: any, context: any) => {
-          return this.service.findBy(tableName, args.filter, context)
-        }
-      }
       // TODO subscriptions
       // TODO relationships
     }

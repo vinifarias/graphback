@@ -11,7 +11,8 @@ import { GraphbackDataProvider } from './layers/data/GraphbackDataProvider';
 import { DefaultCRUDService } from './layers/service/DefaultCRUDService';
 import { DatabaseContextProvider, DefaultDataContextProvider } from './migrations/DatabaseContextProvider';
 import { IDataLayerResourcesManager } from './migrations/DataResourcesManager';
-import { logger } from './utils/logger'
+import { logger } from './utils/logger';
+import { buildSchemaText } from './utils';
 
 /**
  * GraphQLBackend
@@ -20,17 +21,19 @@ import { logger } from './utils/logger'
  * See README for examples
  */
 export class GraphQLBackendCreator {
-
   private dataLayerManager: IDataLayerResourcesManager;
   private dbContextProvider: DatabaseContextProvider;
   private inputContext: InputModelTypeContext[]
+  private graphqlSchema: string;
+
 
   /**
    * @param graphQLSchema string containing graphql types
    * @param config configuration for backend generator
    */
-  constructor(graphQLSchema: string, config: GraphQLGeneratorConfig) {
-    this.inputContext = createInputContext(graphQLSchema, config)
+  constructor(schemaDir: string, config: GraphQLGeneratorConfig) {
+    this.graphqlSchema = buildSchemaText(schemaDir);
+    this.inputContext = createInputContext(this.graphqlSchema, config);
     this.dbContextProvider = new DefaultDataContextProvider();
   }
 
@@ -60,8 +63,8 @@ export class GraphQLBackendCreator {
     const schemaGenerator = new SchemaGenerator(this.inputContext, tsSchemaFormatter)
     backend.schema = schemaGenerator.generate()
 
-    const resolverGenerator = new LegacyResolverGenerator(this.inputContext)
-    backend.resolvers = resolverGenerator.generate(database)
+    const resolverGenerator = new LegacyResolverGenerator(this.inputContext);
+    backend.resolvers = resolverGenerator.generate(database);
 
     return backend;
   }
@@ -85,27 +88,49 @@ export class GraphQLBackendCreator {
   }
 
   public async createClient(): Promise<Client> {
-    const clientGenerator = new ClientGenerator(this.inputContext)
+    const clientGenerator = new ClientGenerator(this.inputContext);
 
-    return clientGenerator.generate()
+    return clientGenerator.generate();
   }
 
+  public async migrateDatabase(
+    migrationsDir: string,
+  ): Promise<void> {
+    const context = this.inputContext.filter(
+      (t: InputModelTypeContext) =>
+        t.kind === OBJECT_TYPE_DEFINITION &&
+        t.name !== 'Query' &&
+        t.name !== 'Mutation' &&
+        t.name !== 'Subscription',
+    );
 
-  public async createDatabase(): Promise<void> {
-    const context = this.inputContext.filter((t: InputModelTypeContext) => t.kind === OBJECT_TYPE_DEFINITION && t.name !== 'Query' && t.name !== 'Mutation' && t.name !== 'Subscription')
+    const changes = await this.dataLayerManager.createMigration(
+      this.graphqlSchema,
+      migrationsDir,
+    );
+
     try {
       if (this.dataLayerManager) {
-        logger.info("Creating database structure")
-        await this.dataLayerManager.createDatabaseResources(this.dbContextProvider, context);
-        await this.dataLayerManager.createDatabaseRelations(this.dbContextProvider, context);
+        if (!changes) {
+          logger.info('Creating database structure');
+          await this.dataLayerManager.createDatabaseResources(
+            this.dbContextProvider,
+            context,
+          );
+          await this.dataLayerManager.createDatabaseRelations(
+            this.dbContextProvider,
+            context,
+          );
+        } else {
+          logger.info('Updating existing database');
+          await this.dataLayerManager.updateDatabaseResources(this.dbContextProvider, context, changes)
+        }
       } else {
-        logger.info("Database structure generation skipped.")
+        logger.info('Database structure generation skipped.');
       }
     } catch (error) {
       // logger.error(`Error on Database creation ${error}`)
-      throw error
+      throw error;
     }
-
   }
 }
-

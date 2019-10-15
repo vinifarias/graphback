@@ -24,6 +24,4 @@ export * from './input/InputTypeVisitor'
 export * from './input/ContextCreator'
 export * from './input/ContextTypes'
 
-export * from './utils/graphqlUtils'
-
 export * from './migrations';

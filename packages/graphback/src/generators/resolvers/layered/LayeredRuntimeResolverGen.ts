@@ -1,6 +1,7 @@
-import { getFieldName, getTableName, ResolverType } from '../../..'
 import { InputModelTypeContext } from '../../../input/ContextTypes'
 import { GraphbackCRUDService } from '../../../layers/service/GraphbackCRUDService'
+import { getFieldName } from '../../../utils'
+import { ResolverType } from '../ResolverType'
 
 /**
  * Generate runtime resolver layer using Apollo GraphQL format

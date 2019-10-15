@@ -1,10 +1,8 @@
 import { gql } from 'apollo-server-core';
-import { readFileSync } from "fs";
-import { GraphQLBackendCreator, PgKnexDBDataProvider } from 'graphback';
 import { PubSub } from 'graphql-subscriptions';
+import { GraphQLBackendCreator, PgKnexDBDataProvider, LocalSchemaProvider } from 'graphback';
 import { makeExecutableSchema } from 'graphql-tools';
-import Knex from 'knex';
-import { resolve } from "path";
+import Knex = require('knex');
 import * as jsonConfig from '../graphback.json'
 
 /**
@@ -12,18 +10,18 @@ import * as jsonConfig from '../graphback.json'
  * It will be part of of the integration tests
  */
 export const createRuntime = async (client: Knex) => {
-    const pubSub = new PubSub()
-    const runtimeSchema = readFileSync(resolve(__dirname, "../model/runtime.graphql"), 'utf8');
-    const backend = new GraphQLBackendCreator(runtimeSchema, jsonConfig.graphqlCRUD);
+    const schemaContext = new LocalSchemaProvider(jsonConfig.folders.migrations, jsonConfig.folders.model);
+    const backend = new GraphQLBackendCreator(schemaContext, jsonConfig.graphqlCRUD);
     const dbClientProvider = new PgKnexDBDataProvider(client);
+    const pubSub = new PubSub();
     const runtime = await backend.createRuntime(dbClientProvider, pubSub);
     const generatedSchema = runtime.schema;
-
-    return makeExecutableSchema({
+    const executableSchema = makeExecutableSchema({
         typeDefs: gql`${generatedSchema}`,
         resolvers: runtime.resolvers,
         resolverValidationOptions: {
             requireResolversForResolveType: false
         }
     });
+    return executableSchema;
 }

@@ -1,4 +1,4 @@
-import { ISchemaProvider } from './ISchemaProvider';
+import {  SchemaProvider } from './SchemaProvider';
 import { buildSchemaText, removeFiles } from '../../utils';
 import { writeFileSync } from 'fs';
 import { join } from 'path';
@@ -7,10 +7,10 @@ import { join } from 'path';
  * Provides old and new schema from a local context
  *
  * @export
- * @class LocalSchemaProvider
- * @extends {ISchemaProvider}
+ * @class InputModelProvider
+ * @extends {SchemaProvider}
  */
-export class LocalSchemaProvider implements ISchemaProvider {
+export class InputModelProvider implements SchemaProvider {
   private oldSchemaDir: string;
   private newSchemaDir: string;
   constructor(oldSchemaDir: string, newSchemaDir: string) {

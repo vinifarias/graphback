@@ -2,7 +2,7 @@ import chalk from 'chalk';
 import * as execa from 'execa'
 import { unlinkSync } from 'fs'
 import { GlobSync } from 'glob'
-import { DatabaseInitializationStrategy, DatabaseSchemaManager, GraphQLBackendCreator, LocalSchemaProvider } from 'graphback';
+import { DatabaseInitializationStrategy, DatabaseSchemaManager, GraphQLBackendCreator, InputModelProvider } from 'graphback';
 import { ConfigBuilder } from '../config/ConfigBuilder';
 import { logError, logInfo } from '../utils'
 import { checkDirectory } from './common'
@@ -53,7 +53,7 @@ export const createDBResources = async (configInstance: ConfigBuilder): Promise<
       await execa('touch', ['db.sqlite'])
     }
 
-    const schemaContext = new LocalSchemaProvider(folders.migrations, folders.model)
+    const schemaContext = new InputModelProvider(folders.migrations, folders.model)
     const backend: GraphQLBackendCreator = new GraphQLBackendCreator(schemaContext, graphqlCRUD)
 
     const manager = new DatabaseSchemaManager(database, dbConfig);

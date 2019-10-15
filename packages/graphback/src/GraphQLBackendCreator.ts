@@ -13,7 +13,7 @@ import { DatabaseContextProvider, DefaultDataContextProvider } from './migration
 import { IDataLayerResourcesManager } from './migrations/DataResourcesManager';
 import { logger } from './utils/logger';
 import { buildSchemaText } from './utils';
-import { ISchemaProvider } from './migrations/schema/ISchemaProvider';
+import { SchemaProvider } from './migrations/schema/SchemaProvider';
 import { Change, diff } from '@graphql-inspector/core';
 import { buildSchema } from 'graphql';
 import { DatabaseInitializationStrategy } from './migrations';
@@ -27,7 +27,7 @@ import { DatabaseInitializationStrategy } from './migrations';
 export class GraphQLBackendCreator {
   private dataLayerManager: IDataLayerResourcesManager;
   private dbContextProvider: DatabaseContextProvider;
-  private schemaContext: ISchemaProvider;
+  private schemaContext: SchemaProvider;
   private inputContext: InputModelTypeContext[];
   private newSchema: string;
   private oldSchema: string;
@@ -36,7 +36,7 @@ export class GraphQLBackendCreator {
    * @param graphQLSchema string containing graphql types
    * @param config configuration for backend generator
    */
-  constructor(schemaContext: ISchemaProvider, config: GraphQLGeneratorConfig) {
+  constructor(schemaContext: SchemaProvider, config: GraphQLGeneratorConfig) {
     this.schemaContext = schemaContext;
     this.oldSchema = schemaContext.getOldSchemaText();
     this.newSchema = schemaContext.getNewSchemaText();
@@ -59,10 +59,6 @@ export class GraphQLBackendCreator {
    */
   public setDatabaseContext(provider: DatabaseContextProvider) {
     this.dbContextProvider = provider;
-  }
-
-  public setSchemaContext(provider: ISchemaProvider) {
-    this.schemaContext = provider;
   }
 
   /**

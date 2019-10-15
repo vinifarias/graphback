@@ -1,2 +1,2 @@
-export * from './schema/LocalSchemaProvider';
+export * from './schema/InputModelProvider';
 export * from './db';

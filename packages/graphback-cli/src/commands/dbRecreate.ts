@@ -1,10 +1,10 @@
-import { CreateDatabase } from 'graphback'
+import { DropCreateDatabaseAlways } from 'graphback'
 import { ConfigBuilder } from '../config/ConfigBuilder';
 import { createDB } from '../helpers'
 
-export const command = 'db'
+export const command = 'db:recreate'
 
-export const desc = 'Create the database schema if it doesn\'t exist'
+export const desc = 'Drop and recreate the database schema'
 
 export const builder = {}
 
@@ -12,7 +12,7 @@ export async function handler() {
   const configInstance = new ConfigBuilder();
   const config = configInstance.config;
 
-  const initializationStrategy = new CreateDatabase({ client: config.db.database, connectionOptions: config.db.dbConfig });
+  const initializationStrategy = new DropCreateDatabaseAlways({ client: config.db.database, connectionOptions: config.db.dbConfig });
   await createDB(initializationStrategy)
   process.exit(0);
 }

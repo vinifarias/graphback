@@ -6,6 +6,7 @@ import { DatabaseSchemaManager, GraphQLBackendCreator, InputModelProvider, DropC
 import { ConfigBuilder } from '../config/ConfigBuilder';
 import { logError, logInfo } from '../utils'
 import { checkDirectory } from './common'
+import { DatabaseInitializationStrategy } from 'graphback/types/database/initialization/DatabaseInitializationStrategy';
 
 
 const handleError = (err: { code: string; message: string; }): void => {
@@ -56,9 +57,9 @@ export const dropDBResources = async (configInstance: ConfigBuilder): Promise<vo
   }
 }
 
-export const createDBResources = async (configInstance: ConfigBuilder): Promise<void> => {
+export const createDBResources = async (configInstance: ConfigBuilder, initializationStrategy: DatabaseInitializationStrategy): Promise<void> => {
   try {
-    const { db: { database, dbConfig, initialization }, graphqlCRUD, folders } = configInstance.config
+    const { db: { database }, graphqlCRUD, folders } = configInstance.config
 
     const models = new GlobSync(`${folders.model}/*.graphql`)
 
@@ -74,9 +75,7 @@ export const createDBResources = async (configInstance: ConfigBuilder): Promise<
     const schemaContext = new InputModelProvider(folders.migrations, folders.model)
     const backend: GraphQLBackendCreator = new GraphQLBackendCreator(schemaContext, graphqlCRUD)
 
-    const dbStrategy = getInitializationStrategy(initialization, database, dbConfig);
-
-    await backend.initializeDatabase(dbStrategy);
+    await backend.initializeDatabase(initializationStrategy);
 
   } catch (err) {
     handleError(err)
@@ -91,10 +90,10 @@ Run ${chalk.cyan(`npm run develop`)} to start the server.
   `)
 }
 
-export const createDB = async (): Promise<void> => {
+export const createDB = async (initializationStrategy: DatabaseInitializationStrategy): Promise<void> => {
   const configInstance = new ConfigBuilder();
   checkDirectory(configInstance)
 
-  await createDBResources(configInstance)
+  await createDBResources(configInstance, initializationStrategy)
   postCommandMessage()
 }

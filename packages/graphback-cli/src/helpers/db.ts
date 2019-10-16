@@ -60,7 +60,8 @@ export const createDBResources = async (configInstance: ConfigBuilder): Promise<
 
     backend.registerDataResourcesManager(manager);
 
-    await backend.migrateDatabase(initialization)
+    // TODO: this
+    // await backend.migrateDatabase(initialization)
 
   } catch (err) {
     handleError(err)

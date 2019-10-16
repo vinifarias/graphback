@@ -1,14 +1,14 @@
 // tslint:disable: await-promise
 import * as Knex from 'knex';
-import { InputModelFieldContext, InputModelTypeContext } from '../input/ContextTypes';
-import { logger } from '../utils/logger';
+import { InputModelFieldContext, InputModelTypeContext } from '../../input/ContextTypes';
+import { logger } from '../../utils/logger';
 import { DatabaseContextProvider } from './DatabaseContextProvider';
 import { join } from 'path';
-import { sync } from 'glob';
+import { sync, GlobSync } from 'glob';
 import { diff, Change, ChangeType } from '@graphql-inspector/core';
 import { buildSchema } from 'graphql';
 import { CHANGES } from './changes';
-import { buildSchemaText, buildSchemaFromDir } from '../utils';
+import { buildSchemaText, buildSchemaFromDir } from '../../utils';
 import { existsSync, mkdirSync, unlinkSync, writeFileSync } from 'fs';
 /**
  * Represents update for data type
@@ -80,7 +80,8 @@ const createDBConnectionKnex = (
  * Manager for Postgres database
  */
 export class DatabaseSchemaManager implements IDataLayerResourcesManager {
-  private dbConnection: Knex;
+  protected dbConnection: Knex;
+  private client: string;
 
   // tslint:disable-next-line:typedef
   private primitiveTypesMapping = {
@@ -95,6 +96,7 @@ export class DatabaseSchemaManager implements IDataLayerResourcesManager {
     dbConnectionOptions: Knex.ConnectionConfig | Knex.Sqlite3ConnectionConfig,
   ) {
     this.dbConnection = createDBConnectionKnex(client, dbConnectionOptions);
+    this.client = client;
   }
 
   public async createMigration(
@@ -345,6 +347,24 @@ export class DatabaseSchemaManager implements IDataLayerResourcesManager {
     return this.dbConnection;
   }
 
+  public async dropDatabaseSchema() {
+    try {
+      if (this.client === 'sqlite3') {
+        const sqliteFile = new GlobSync('*.sqlite', { cwd: process.cwd() })
+        if (sqliteFile.found.length) {
+          unlinkSync(`${process.cwd()}/${sqliteFile.found[0]}`)
+        }
+      } else {
+        await this.getConnection().raw('DROP SCHEMA public CASCADE;')
+        // tslint:disable-next-line: await-promise
+        await this.getConnection().raw('CREATE SCHEMA public;')
+      }
+
+    } catch (err) {
+      this.handleError(err)
+    }
+  }
+
   private async addField(tableName: string, field: string, t: InputModelTypeContext) {
     const hasTable = await this.dbConnection.schema.hasTable(tableName);
 
@@ -386,5 +406,15 @@ export class DatabaseSchemaManager implements IDataLayerResourcesManager {
         table.timestamps();
       },
     );
+  }
+
+  // TODO: Improve this
+  private handleError(err: any): void {
+    if (err.code === 'ECONNREFUSED') {
+      console.log('Database not running. Run docker-compose up -d or docker-compose start to start the database.')
+    } else {
+      console.log(err.message)
+    }
+    process.exit(0)
   }
 }

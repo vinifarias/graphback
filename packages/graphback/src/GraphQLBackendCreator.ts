@@ -9,14 +9,14 @@ import { createInputContext } from './input/ContextCreator';
 import { InputModelTypeContext, OBJECT_TYPE_DEFINITION } from './input/ContextTypes';
 import { GraphbackDataProvider } from './layers/data/GraphbackDataProvider';
 import { DefaultCRUDService } from './layers/service/DefaultCRUDService';
-import { DatabaseContextProvider, DefaultDataContextProvider } from './migrations/DatabaseContextProvider';
-import { IDataLayerResourcesManager } from './migrations/DataResourcesManager';
+import { DatabaseContextProvider, DefaultDataContextProvider } from './database/migrations/DatabaseContextProvider';
+import { IDataLayerResourcesManager } from './database/migrations/DataResourcesManager';
 import { logger } from './utils/logger';
 import { buildSchemaText } from './utils';
-import { SchemaProvider } from './migrations/schema/SchemaProvider';
+import { SchemaProvider } from './database/migrations/schema/SchemaProvider';
 import { Change, diff } from '@graphql-inspector/core';
 import { buildSchema } from 'graphql';
-import { DatabaseInitializationStrategy } from './migrations';
+import { DatabaseInitializationStrategy } from './database/initialization/DatabaseInitializationStrategy';
 
 /**
  * GraphQLBackend
@@ -79,11 +79,13 @@ export class GraphQLBackendCreator {
   /**
    * Create runtime for backend in form of the schema string and resolve functions
    */
-  public async createRuntime(db: GraphbackDataProvider, pubSub: PubSub): Promise<RuntimeResolversDefinition> {
+  public async createRuntime(db: GraphbackDataProvider, pubSub: PubSub, databaseInitilization: DatabaseInitializationStrategy): Promise<RuntimeResolversDefinition> {
     const backend: RuntimeResolversDefinition = {
       schema: "",
       resolvers: {}
     };
+
+    await databaseInitilization.init(this.dbContextProvider, this.inputContext);
 
     const schemaGenerator = new SchemaGenerator(this.inputContext)
     backend.schema = schemaGenerator.generate()
@@ -100,50 +102,50 @@ export class GraphQLBackendCreator {
     return clientGenerator.generate();
   }
 
-  public async migrateDatabase(
-    initializationStrategy: DatabaseInitializationStrategy
-  ): Promise<void> {
-    const context = this.inputContext.filter(
-      (t: InputModelTypeContext) =>
-        t.kind === OBJECT_TYPE_DEFINITION &&
-        t.name !== 'Query' &&
-        t.name !== 'Mutation' &&
-        t.name !== 'Subscription',
-    );
+  // public async migrateDatabase(
+  //   initializationStrategy: DatabaseInitializationStrategy
+  // ): Promise<void> {
+  //   const context = this.inputContext.filter(
+  //     (t: InputModelTypeContext) =>
+  //       t.kind === OBJECT_TYPE_DEFINITION &&
+  //       t.name !== 'Query' &&
+  //       t.name !== 'Mutation' &&
+  //       t.name !== 'Subscription',
+  //   );
 
-    const changes = await this.getSchemaChanges(
-      this.oldSchema,
-      this.newSchema,
-    );
+  //   const changes = await this.getSchemaChanges(
+  //     this.oldSchema,
+  //     this.newSchema,
+  //   );
 
-    if (!this.oldSchema || changes.length > 0) {
-      this.schemaContext.updateOldSchema(this.newSchema);
-    }
+  //   if (!this.oldSchema || changes.length > 0) {
+  //     this.schemaContext.updateOldSchema(this.newSchema);
+  //   }
 
-    try {
-      if (this.dataLayerManager) {
-        if (initializationStrategy === DatabaseInitializationStrategy.DropCreate || !this.oldSchema) {
-          logger.info('Creating database structure');
-          await this.dataLayerManager.createDatabaseResources(
-            this.dbContextProvider,
-            context,
-          );
-          await this.dataLayerManager.createDatabaseRelations(
-            this.dbContextProvider,
-            context,
-          );
-        } else {
-          logger.info('Updating existing database');
-          await this.dataLayerManager.updateDatabaseResources(this.dbContextProvider, context, changes)
-        }
-      } else {
-        logger.info('Database structure generation skipped.');
-      }
-    } catch (error) {
-      // logger.error(`Error on Database creation ${error}`)
-      throw error;
-    }
-  }
+  //   try {
+  //     if (this.dataLayerManager) {
+  //       if (initializationStrategy === DatabaseInitializationStrategy.DropCreate || !this.oldSchema) {
+  //         logger.info('Creating database structure');
+  //         await this.dataLayerManager.createDatabaseResources(
+  //           this.dbContextProvider,
+  //           context,
+  //         );
+  //         await this.dataLayerManager.createDatabaseRelations(
+  //           this.dbContextProvider,
+  //           context,
+  //         );
+  //       } else {
+  //         logger.info('Updating existing database');
+  //         await this.dataLayerManager.updateDatabaseResources(this.dbContextProvider, context, changes)
+  //       }
+  //     } else {
+  //       logger.info('Database structure generation skipped.');
+  //     }
+  //   } catch (error) {
+  //     // logger.error(`Error on Database creation ${error}`)
+  //     throw error;
+  //   }
+  // }
 
   private getSchemaChanges(
     oldSchemaText: string,

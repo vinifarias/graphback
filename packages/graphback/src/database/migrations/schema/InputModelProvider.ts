@@ -1,5 +1,5 @@
 import {  SchemaProvider } from './SchemaProvider';
-import { buildSchemaText, removeFiles } from '../../utils';
+import { buildSchemaText, removeFiles } from '../../../utils';
 import { writeFileSync } from 'fs';
 import { join } from 'path';
 

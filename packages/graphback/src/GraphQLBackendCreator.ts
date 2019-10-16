@@ -11,12 +11,9 @@ import { GraphbackDataProvider } from './layers/data/GraphbackDataProvider';
 import { DefaultCRUDService } from './layers/service/DefaultCRUDService';
 import { DatabaseContextProvider, DefaultDataContextProvider } from './database/migrations/DatabaseContextProvider';
 import { IDataLayerResourcesManager } from './database/migrations/DataResourcesManager';
-import { logger } from './utils/logger';
-import { buildSchemaText } from './utils';
 import { SchemaProvider } from './database/migrations/schema/SchemaProvider';
-import { Change, diff } from '@graphql-inspector/core';
-import { buildSchema } from 'graphql';
 import { DatabaseInitializationStrategy } from './database/initialization/DatabaseInitializationStrategy';
+import { GraphQLSchemaManager, SchemaManagerOptions } from './database/migrations/schema/GraphQLSchemaManager';
 
 /**
  * GraphQLBackend
@@ -25,21 +22,16 @@ import { DatabaseInitializationStrategy } from './database/initialization/Databa
  * See README for examples
  */
 export class GraphQLBackendCreator {
-  private dataLayerManager: IDataLayerResourcesManager;
   private dbContextProvider: DatabaseContextProvider;
-  private schemaContext: SchemaProvider;
+  private graphQLSchemaManager: GraphQLSchemaManager;
   private inputContext: InputModelTypeContext[];
-  private newSchema: string;
-  private oldSchema: string;
 
   /**
    * @param graphQLSchema string containing graphql types
    * @param config configuration for backend generator
    */
   constructor(schemaContext: SchemaProvider, config: GraphQLGeneratorConfig) {
-    this.schemaContext = schemaContext;
-    this.oldSchema = schemaContext.getOldSchemaText();
-    this.newSchema = schemaContext.getNewSchemaText();
+    this.graphQLSchemaManager = new GraphQLSchemaManager({ provider: schemaContext });
     this.inputContext = createInputContext(schemaContext.getNewSchemaText(), config);
     this.dbContextProvider = new DefaultDataContextProvider();
   }
@@ -49,7 +41,7 @@ export class GraphQLBackendCreator {
    * For example in schema based databases manager will create/update underlying schema.
    */
   public registerDataResourcesManager(manager: IDataLayerResourcesManager) {
-    this.dataLayerManager = manager;
+    // this.dataLayerManager = manager;
   }
 
   /**
@@ -79,13 +71,25 @@ export class GraphQLBackendCreator {
   /**
    * Create runtime for backend in form of the schema string and resolve functions
    */
-  public async createRuntime(db: GraphbackDataProvider, pubSub: PubSub, databaseInitilization: DatabaseInitializationStrategy): Promise<RuntimeResolversDefinition> {
+  public async createRuntime(db: GraphbackDataProvider, pubSub: PubSub, databaseInitialization: DatabaseInitializationStrategy): Promise<RuntimeResolversDefinition> {
     const backend: RuntimeResolversDefinition = {
       schema: "",
       resolvers: {}
     };
 
-    await databaseInitilization.init(this.dbContextProvider, this.inputContext);
+    const typeContext = this.inputContext.filter(
+      (t: InputModelTypeContext) =>
+        t.kind === OBJECT_TYPE_DEFINITION &&
+        t.name !== 'Query' &&
+        t.name !== 'Mutation' &&
+        t.name !== 'Subscription',
+    );
+
+    const schemaChanges = this.graphQLSchemaManager.getChanges();
+
+    await databaseInitialization.init(this.dbContextProvider, typeContext, schemaChanges);
+
+    this.graphQLSchemaManager.updateOldSchema();
 
     const schemaGenerator = new SchemaGenerator(this.inputContext)
     backend.schema = schemaGenerator.generate()
@@ -100,70 +104,5 @@ export class GraphQLBackendCreator {
     const clientGenerator = new ClientGenerator(this.inputContext);
 
     return clientGenerator.generate();
-  }
-
-  // public async migrateDatabase(
-  //   initializationStrategy: DatabaseInitializationStrategy
-  // ): Promise<void> {
-  //   const context = this.inputContext.filter(
-  //     (t: InputModelTypeContext) =>
-  //       t.kind === OBJECT_TYPE_DEFINITION &&
-  //       t.name !== 'Query' &&
-  //       t.name !== 'Mutation' &&
-  //       t.name !== 'Subscription',
-  //   );
-
-  //   const changes = await this.getSchemaChanges(
-  //     this.oldSchema,
-  //     this.newSchema,
-  //   );
-
-  //   if (!this.oldSchema || changes.length > 0) {
-  //     this.schemaContext.updateOldSchema(this.newSchema);
-  //   }
-
-  //   try {
-  //     if (this.dataLayerManager) {
-  //       if (initializationStrategy === DatabaseInitializationStrategy.DropCreate || !this.oldSchema) {
-  //         logger.info('Creating database structure');
-  //         await this.dataLayerManager.createDatabaseResources(
-  //           this.dbContextProvider,
-  //           context,
-  //         );
-  //         await this.dataLayerManager.createDatabaseRelations(
-  //           this.dbContextProvider,
-  //           context,
-  //         );
-  //       } else {
-  //         logger.info('Updating existing database');
-  //         await this.dataLayerManager.updateDatabaseResources(this.dbContextProvider, context, changes)
-  //       }
-  //     } else {
-  //       logger.info('Database structure generation skipped.');
-  //     }
-  //   } catch (error) {
-  //     // logger.error(`Error on Database creation ${error}`)
-  //     throw error;
-  //   }
-  // }
-
-  private getSchemaChanges(
-    oldSchemaText: string,
-    newSchemaText: string,
-  ): Promise<Change[]> {
-    let changes: Change[] = [];
-
-    if (!oldSchemaText || !oldSchemaText.length) {
-      return Promise.resolve(changes);
-    }
-
-    const oldSchema = buildSchema(oldSchemaText);
-    const newSchema = buildSchema(newSchemaText);
-
-    if (oldSchema && newSchema) {
-      changes = diff(oldSchema, newSchema);
-    }
-
-    return Promise.resolve(changes);
   }
 }

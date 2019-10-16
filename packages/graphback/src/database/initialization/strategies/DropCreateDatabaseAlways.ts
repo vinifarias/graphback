@@ -13,5 +13,6 @@ export class DropCreateDatabaseAlways implements DatabaseInitializationStrategy 
   public async init(context: DatabaseContextProvider, types: InputModelTypeContext[]): Promise<void> {
     await this.schemaManager.dropDatabaseSchema();
     await this.schemaManager.createDatabaseResources(context, types);
+    await this.schemaManager.createDatabaseRelations(context, types);
   }
 }

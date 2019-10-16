@@ -2,7 +2,7 @@ import chalk from 'chalk';
 import * as execa from 'execa'
 import { unlinkSync } from 'fs'
 import { GlobSync } from 'glob'
-import { DatabaseInitializationStrategy, DatabaseSchemaManager, GraphQLBackendCreator, InputModelProvider } from 'graphback';
+import { DatabaseSchemaManager, GraphQLBackendCreator, InputModelProvider, DropCreateDatabaseAlways, UpdateDatabaseIfChanges, DatabaseOptions } from 'graphback';
 import { ConfigBuilder } from '../config/ConfigBuilder';
 import { logError, logInfo } from '../utils'
 import { checkDirectory } from './common'
@@ -15,6 +15,24 @@ const handleError = (err: { code: string; message: string; }): void => {
     logError(err.message)
   }
   process.exit(0)
+}
+
+// tslint:disable-next-line: no-any
+const getInitializationStrategy = (strategyType: string, client: string, dbConfig: any) => {
+
+  const dbOptions: DatabaseOptions = {
+    client,
+    connectionOptions: dbConfig
+  };
+
+  switch (strategyType) {
+    case 'DropCreateDatabaseAlways':
+      return new DropCreateDatabaseAlways(dbOptions);
+    case 'UpdateDatabaseIfChanges':
+      return new UpdateDatabaseIfChanges(dbOptions);
+    default:
+      throw new Error("Invalid database strategy");
+  }
 }
 
 export const dropDBResources = async (configInstance: ConfigBuilder): Promise<void> => {
@@ -56,12 +74,9 @@ export const createDBResources = async (configInstance: ConfigBuilder): Promise<
     const schemaContext = new InputModelProvider(folders.migrations, folders.model)
     const backend: GraphQLBackendCreator = new GraphQLBackendCreator(schemaContext, graphqlCRUD)
 
-    const manager = new DatabaseSchemaManager(database, dbConfig);
+    const dbStrategy = getInitializationStrategy(initialization, database, dbConfig);
 
-    backend.registerDataResourcesManager(manager);
-
-    // TODO: this
-    // await backend.migrateDatabase(initialization)
+    await backend.initializeDatabase(dbStrategy);
 
   } catch (err) {
     handleError(err)
@@ -79,10 +94,6 @@ Run ${chalk.cyan(`npm run develop`)} to start the server.
 export const createDB = async (): Promise<void> => {
   const configInstance = new ConfigBuilder();
   checkDirectory(configInstance)
-
-  if (configInstance.config.db.initialization === DatabaseInitializationStrategy.DropCreate) {
-    await dropDBResources(configInstance)
-  }
 
   await createDBResources(configInstance)
   postCommandMessage()

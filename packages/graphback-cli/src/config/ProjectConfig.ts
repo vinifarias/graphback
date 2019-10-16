@@ -1,4 +1,4 @@
-import { GraphQLGeneratorConfig, DatabaseInitializationStrategy } from 'graphback';
+import { GraphQLGeneratorConfig } from 'graphback';
 import { FolderConfig } from './FolderConfig';
 import { OpenApiConfig } from './OpenApiConfig'
 
@@ -18,7 +18,7 @@ import { OpenApiConfig } from './OpenApiConfig'
         // tslint:disable-next-line: no-any
         dbConfig: any,
         database: string
-        initialization: DatabaseInitializationStrategy
+        initialization?: string
     },
 
     /**

@@ -7,8 +7,7 @@ import { join } from 'path';
 import { sync, GlobSync } from 'glob';
 import { diff, Change, ChangeType } from '@graphql-inspector/core';
 import { buildSchema } from 'graphql';
-import { CHANGES } from './changes';
-import { buildSchemaText, buildSchemaFromDir } from '../../utils';
+import {buildSchemaFromDir } from '../../utils';
 import { existsSync, mkdirSync, unlinkSync, writeFileSync } from 'fs';
 /**
  * Represents update for data type

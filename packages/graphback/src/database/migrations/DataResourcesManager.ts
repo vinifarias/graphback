@@ -129,24 +129,8 @@ export class DatabaseSchemaManager implements IDataLayerResourcesManager {
   public async createDatabaseResources(context: DatabaseContextProvider, types: InputModelTypeContext[]): Promise<void> {
     for (const gqlType of types) {
       const tableName: string = context.getFieldName(gqlType);
-      const hasTable = await this.dbConnection.schema.hasTable(tableName);
-      if (hasTable) {
-        logger.warn(`Table exists! Skipping table creation for ${tableName}`);
-      } else {
-        await this.dbConnection.schema.createTable(
-          tableName,
-          (table: Knex.TableBuilder) => {
-            table.increments();
-            for (const gqlField of gqlType.fields) {
-              const method = this.primitiveTypesMapping[gqlField.type];
-              if (method) {
-                table[method](gqlField.name);
-              }
-            }
-            table.timestamps();
-          },
-        );
-      }
+
+      await this.addTable(tableName, gqlType);
     }
 
     return Promise.resolve();
@@ -321,24 +305,28 @@ export class DatabaseSchemaManager implements IDataLayerResourcesManager {
     changes: Change[]
   ): Promise<void> {
 
-    for (const change of changes) {
+    if (changes.length > 0) {
+      logger.info(`Updating database schema`)
 
-      const parts = change.path.split('.');
+      for (const change of changes) {
 
-      const changedType = {
-        name: parts[0],
-        field: parts[1],
-      }
+        const parts = change.path.split('.');
 
-      const gqlType = types.find((t: InputModelTypeContext) => t.name === changedType.name);
+        const changedType = {
+          name: parts[0],
+          field: parts[1],
+        }
 
-      const tableName = context.getFieldName(gqlType);
+        const gqlType = types.find((t: InputModelTypeContext) => t.name === changedType.name);
 
-      if (change.type === ChangeType.FieldAdded) {
-        await this.addField(tableName, changedType.field, gqlType);
-      }
-      if (change.type === ChangeType.TypeAdded) {
-        await this.addTable(tableName, gqlType);
+        const tableName = context.getFieldName(gqlType);
+
+        if (change.type === ChangeType.FieldAdded) {
+          await this.addField(tableName, changedType.field, gqlType);
+        }
+        if (change.type === ChangeType.TypeAdded) {
+          await this.addTable(tableName, gqlType);
+        }
       }
     }
   }
@@ -368,22 +356,25 @@ export class DatabaseSchemaManager implements IDataLayerResourcesManager {
   private async addField(tableName: string, field: string, t: InputModelTypeContext) {
     const hasTable = await this.dbConnection.schema.hasTable(tableName);
 
-    if (!hasTable) {
-      logger.warn(`Table does not exist! Cannot add field to table ${tableName}`);
-    }
-
     const gqlField = t.fields.find((f: InputModelFieldContext) => f.name === field);
 
-    await this.dbConnection.schema.alterTable(
-      tableName,
-      (table: Knex.TableBuilder) => {
+    // TODO: Chalk logs
+    if (!hasTable) {
+      logger.warn(`Table does not exist! Cannot add field to table ${tableName}`);
+    } else {
+      logger.info(`Adding field '${gqlField.name}' to table '${tableName}'`);
 
-        const method = this.primitiveTypesMapping[gqlField.type];
-        if (method) {
-          table[method](gqlField.name);
+      await this.dbConnection.schema.alterTable(
+        tableName,
+        (table: Knex.TableBuilder) => {
+
+          const method = this.primitiveTypesMapping[gqlField.type];
+          if (method) {
+            table[method](gqlField.name);
+          }
         }
-      }
-    );
+      );
+    }
   }
 
   private async addTable(tableName: string, t: InputModelTypeContext) {
@@ -391,21 +382,23 @@ export class DatabaseSchemaManager implements IDataLayerResourcesManager {
 
     if (hasTable) {
       logger.warn(`Table already exists! Cannot add table ${tableName}`);
-    }
+    } else {
+      logger.info(`Creating table ${tableName}`);
 
-    await this.dbConnection.schema.createTable(
-      tableName,
-      (table: Knex.TableBuilder) => {
-        table.increments();
-        for (const field of t.fields) {
-          const method = this.primitiveTypesMapping[field.type];
-          if (method) {
-            table[method](field.name);
+      await this.dbConnection.schema.createTable(
+        tableName,
+        (table: Knex.TableBuilder) => {
+          table.increments();
+          for (const field of t.fields) {
+            const method = this.primitiveTypesMapping[field.type];
+            if (method) {
+              table[method](field.name);
+            }
           }
-        }
-        table.timestamps();
-      },
-    );
+          table.timestamps();
+        },
+      );
+    }
   }
 
   // TODO: Improve this

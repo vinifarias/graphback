@@ -13,7 +13,7 @@ import { DatabaseContextProvider, DefaultDataContextProvider } from './database/
 import { IDataLayerResourcesManager } from './database/migrations/DataResourcesManager';
 import { SchemaProvider } from './database/migrations/schema/SchemaProvider';
 import { DatabaseInitializationStrategy } from './database/initialization/DatabaseInitializationStrategy';
-import { GraphQLSchemaManager, SchemaManagerOptions } from './database/migrations/schema/GraphQLSchemaManager';
+import { GraphQLSchemaManager } from './database/migrations/schema/GraphQLSchemaManager';
 
 /**
  * GraphQLBackend
@@ -68,15 +68,7 @@ export class GraphQLBackendCreator {
     return backend;
   }
 
-  /**
-   * Create runtime for backend in form of the schema string and resolve functions
-   */
-  public async createRuntime(db: GraphbackDataProvider, pubSub: PubSub, databaseInitialization: DatabaseInitializationStrategy): Promise<RuntimeResolversDefinition> {
-    const backend: RuntimeResolversDefinition = {
-      schema: "",
-      resolvers: {}
-    };
-
+  public async initializeDatabase(strategy: DatabaseInitializationStrategy) {
     const typeContext = this.inputContext.filter(
       (t: InputModelTypeContext) =>
         t.kind === OBJECT_TYPE_DEFINITION &&
@@ -87,9 +79,21 @@ export class GraphQLBackendCreator {
 
     const schemaChanges = this.graphQLSchemaManager.getChanges();
 
-    await databaseInitialization.init(this.dbContextProvider, typeContext, schemaChanges);
+    await strategy.init(this.dbContextProvider, typeContext, schemaChanges);
 
     this.graphQLSchemaManager.updateOldSchema();
+  }
+
+  /**
+   * Create runtime for backend in form of the schema string and resolve functions
+   */
+  public async createRuntime(db: GraphbackDataProvider, pubSub: PubSub, dbStrategy: DatabaseInitializationStrategy): Promise<RuntimeResolversDefinition> {
+    const backend: RuntimeResolversDefinition = {
+      schema: "",
+      resolvers: {}
+    };
+
+    await this.initializeDatabase(dbStrategy);
 
     const schemaGenerator = new SchemaGenerator(this.inputContext)
     backend.schema = schemaGenerator.generate()

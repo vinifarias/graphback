@@ -326,7 +326,7 @@ export class DatabaseSchemaManager implements IDataLayerResourcesManager {
     const gqlField = t.fields.find((f: InputModelFieldContext) => f.name === field);
 
     if (!hasTable) {
-      logger.warn(`Table does not exist! Cannot add field to table ${tableName}`);
+      logger.info(`Table does not exist! Cannot add field to table ${tableName}`);
     } else {
       logger.info(`Adding field '${gqlField.name}' to table '${tableName}'`);
 
@@ -347,7 +347,7 @@ export class DatabaseSchemaManager implements IDataLayerResourcesManager {
     const hasTable = await this.dbConnection.schema.hasTable(tableName);
 
     if (hasTable) {
-      logger.warn(`Table already exists! Cannot add table ${tableName}`);
+      logger.info(`Table already exists! Cannot add table ${tableName}`);
     } else {
       logger.info(`Creating table ${tableName}`);
 

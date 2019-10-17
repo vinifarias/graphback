@@ -1,4 +1,3 @@
-import chalk from 'chalk';
 import * as execa from 'execa'
 import { unlinkSync } from 'fs'
 import { GlobSync } from 'glob'
@@ -62,12 +61,8 @@ export const createDBResources = async (configInstance: ConfigBuilder, initializ
   }
 }
 
-const postCommandMessage = () => {
-  logInfo(`
-Database resources created.
-
-Run ${chalk.cyan(`npm run develop`)} to start the server.
-  `)
+export const postCommandMessage = (message: string) => {
+  logInfo(message);
 }
 
 export const createDB = async (initializationStrategy: DatabaseInitializationStrategy): Promise<void> => {
@@ -75,5 +70,4 @@ export const createDB = async (initializationStrategy: DatabaseInitializationStr
   checkDirectory(configInstance)
 
   await createDBResources(configInstance, initializationStrategy)
-  postCommandMessage()
 }

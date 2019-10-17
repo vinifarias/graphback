@@ -1,6 +1,6 @@
+import chalk from 'chalk';
 import { ConfigBuilder } from '../config/ConfigBuilder';
-import { dropDBResources } from '../helpers'
-import { logInfo } from '../utils';
+import { dropDBResources, postCommandMessage } from '../helpers'
 
 export const command = 'db:drop'
 
@@ -13,9 +13,11 @@ export async function handler() {
 
   await dropDBResources(configInstance);
 
-  logInfo(`
-Database resources dropped
-  `);
+  postCommandMessage(`
+Database resources dropped.
+
+Run ${chalk.cyan(`graphback db`)} to create them again.
+  `)
 
   process.exit(0);
 }

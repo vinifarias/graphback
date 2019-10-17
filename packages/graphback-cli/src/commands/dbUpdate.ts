@@ -1,6 +1,7 @@
+import chalk from 'chalk';
 import { UpdateDatabaseIfChanges } from 'graphback'
 import { ConfigBuilder } from '../config/ConfigBuilder';
-import { createDB } from '../helpers'
+import { createDB, postCommandMessage } from '../helpers'
 
 export const command = 'db:update'
 
@@ -14,5 +15,12 @@ export async function handler() {
 
   const initializationStrategy = new UpdateDatabaseIfChanges({ client: config.db.database, connectionOptions: config.db.dbConfig });
   await createDB(initializationStrategy)
+
+  postCommandMessage(`
+Database resources updated.
+
+Run ${chalk.cyan(`npm run develop`)} to start the server.
+  `)
+
   process.exit(0);
 }

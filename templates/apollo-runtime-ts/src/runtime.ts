@@ -1,13 +1,12 @@
 import { gql } from 'apollo-server-core';
 import {
-  CreateDatabaseIfNotExists,
   DatabaseConnectionOptions,
   DatabaseInitializationStrategy,
+  DropCreateDatabaseIfChanges,
   GraphQLBackendCreator,
   InputModelProvider,
   PgKnexDBDataProvider,
-  UpdateDatabaseIfChanges,
-  DropCreateDatabaseIfChanges
+  UpdateDatabaseIfChanges
 } from 'graphback';
 import { PubSub } from 'graphql-subscriptions';
 import { makeExecutableSchema } from 'graphql-tools';

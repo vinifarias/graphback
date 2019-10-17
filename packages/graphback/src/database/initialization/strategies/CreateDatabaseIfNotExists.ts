@@ -8,10 +8,10 @@ import { DatabaseInitializationStrategy } from '../DatabaseInitializationStrateg
  * Database initialization strategy that will create a database on initialization - if one does not exist.
  *
  * @export
- * @class CreateDatabase
+ * @class CreateDatabaseIfNotExists
  * @implements {DatabaseInitializationStrategy}
  */
-export class CreateDatabase implements DatabaseInitializationStrategy {
+export class CreateDatabaseIfNotExists implements DatabaseInitializationStrategy {
   private schemaManager: DatabaseSchemaManager;
   constructor(databaseOptions: DatabaseConnectionOptions) {
     this.schemaManager = new DatabaseSchemaManager(databaseOptions.client, databaseOptions.connectionOptions);

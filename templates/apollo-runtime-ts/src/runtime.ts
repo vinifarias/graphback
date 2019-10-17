@@ -1,8 +1,8 @@
 import { gql } from 'apollo-server-core';
+import { CreateDatabaseIfNotExists, GraphQLBackendCreator, InputModelProvider, PgKnexDBDataProvider } from 'graphback';
 import { PubSub } from 'graphql-subscriptions';
-import { GraphQLBackendCreator, PgKnexDBDataProvider, InputModelProvider, DropCreateDatabaseAlways, DatabaseOptions } from 'graphback';
 import { makeExecutableSchema } from 'graphql-tools';
-import Knex = require('knex');
+import * as Knex from 'knex';
 import * as jsonConfig from '../graphback.json'
 
 /**
@@ -14,7 +14,7 @@ export const createRuntime = async (client: Knex) => {
   const backend = new GraphQLBackendCreator(schemaContext, jsonConfig.graphqlCRUD);
   const dbClientProvider = new PgKnexDBDataProvider(client);
 
-  const dbInitializationStrategy = new DropCreateDatabaseAlways({
+  const dbInitializationStrategy = new CreateDatabaseIfNotExists({
     client: jsonConfig.db.database,
     connectionOptions: jsonConfig.db.dbConfig
   });

@@ -14,16 +14,16 @@ export interface SchemaManagerOptions {
  */
 export class GraphQLSchemaManager {
   public provider: SchemaProvider;
-  private oldSchemaText: string;
-  private newSchemaText: string;
+  private previousSchemaText: string;
+  private currentSchemaText: string;
   constructor(options: SchemaManagerOptions) {
     this.provider = options.provider;
-    this.oldSchemaText = this.provider.getPreviousSchemaText();
-    this.newSchemaText = this.provider.getCurrentSchemaText();
+    this.previousSchemaText = this.provider.getPreviousSchemaText();
+    this.currentSchemaText = this.provider.getCurrentSchemaText();
   }
 
   /**
-   *
+   * Get the difference between the current and previous schemas
    *
    * @returns {Change[]}
    * @memberof GraphQLSchemaManager
@@ -31,12 +31,12 @@ export class GraphQLSchemaManager {
   public getChanges(): Change[] {
     let changes: Change[] = [];
 
-    if (!this.oldSchemaText || !this.oldSchemaText.length) {
+    if (!this.previousSchemaText || !this.previousSchemaText.length) {
       return changes;
     }
 
-    const oldSchema = buildSchema(this.oldSchemaText);
-    const newSchema = buildSchema(this.newSchemaText);
+    const oldSchema = buildSchema(this.previousSchemaText);
+    const newSchema = buildSchema(this.currentSchemaText);
 
     if (oldSchema && newSchema) {
       changes = diff(oldSchema, newSchema);
@@ -46,6 +46,6 @@ export class GraphQLSchemaManager {
   }
 
   public updateOldSchema() {
-    this.provider.updateOldSchema(this.newSchemaText);
+    this.provider.updatePreviousSchema(this.currentSchemaText);
   }
 }

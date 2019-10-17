@@ -4,7 +4,7 @@ import { buildSchemaText, removeFiles } from '../../../utils';
 import {  SchemaProvider } from './SchemaProvider';
 
 /**
- * Provides old and new schema from a local context
+ * Provides old and new schema from a local filesystem
  *
  * @export
  * @class InputModelProvider
@@ -26,7 +26,7 @@ export class InputModelProvider implements SchemaProvider {
     return buildSchemaText(this.oldSchemaDir);
   }
 
-  public async updateOldSchema(newSchema: string) {
+  public async updatePreviousSchema(newSchema: string) {
     await removeFiles(join(this.oldSchemaDir, '*.graphql'));
     writeFileSync(join(this.oldSchemaDir, 'Previous.graphql'), newSchema);
   }

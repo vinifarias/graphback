@@ -37,14 +37,6 @@ export class GraphQLBackendCreator {
   }
 
   /**
-   * Register new data resources manager responsible for creating database layer
-   * For example in schema based databases manager will create/update underlying schema.
-   */
-  public registerDataResourcesManager(manager: IDataLayerResourcesManager) {
-    // this.dataLayerManager = manager;
-  }
-
-  /**
    * Set resolver operations that will be generated
    *
    * @param types - array of resolver operations that should be supported

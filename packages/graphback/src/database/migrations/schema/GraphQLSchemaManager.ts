@@ -5,6 +5,13 @@ import { SchemaProvider } from './SchemaProvider';
 export interface SchemaManagerOptions {
   provider: SchemaProvider
 }
+
+/**
+ * Manages GraphQL schemas
+ *
+ * @export
+ * @class GraphQLSchemaManager
+ */
 export class GraphQLSchemaManager {
   public provider: SchemaProvider;
   private oldSchemaText: string;
@@ -15,6 +22,12 @@ export class GraphQLSchemaManager {
     this.newSchemaText = this.provider.getNewSchemaText();
   }
 
+  /**
+   * 
+   *
+   * @returns {Change[]}
+   * @memberof GraphQLSchemaManager
+   */
   public getChanges(): Change[] {
     let changes: Change[] = [];
 

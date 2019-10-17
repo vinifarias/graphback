@@ -2,12 +2,10 @@ import chalk from 'chalk';
 import * as execa from 'execa'
 import { unlinkSync } from 'fs'
 import { GlobSync } from 'glob'
-import { DatabaseSchemaManager, GraphQLBackendCreator, InputModelProvider, DropCreateDatabaseAlways, UpdateDatabaseIfChanges, DatabaseOptions } from 'graphback';
+import { DatabaseInitializationStrategy, DatabaseSchemaManager, GraphQLBackendCreator, InputModelProvider } from 'graphback';
 import { ConfigBuilder } from '../config/ConfigBuilder';
 import { logError, logInfo } from '../utils'
 import { checkDirectory } from './common'
-import { DatabaseInitializationStrategy } from 'graphback/types/database/initialization/DatabaseInitializationStrategy';
-
 
 const handleError = (err: { code: string; message: string; }): void => {
   if (err.code === 'ECONNREFUSED') {
@@ -16,24 +14,6 @@ const handleError = (err: { code: string; message: string; }): void => {
     logError(err.message)
   }
   process.exit(0)
-}
-
-// tslint:disable-next-line: no-any
-const getInitializationStrategy = (strategyType: string, client: string, dbConfig: any) => {
-
-  const dbOptions: DatabaseOptions = {
-    client,
-    connectionOptions: dbConfig
-  };
-
-  switch (strategyType) {
-    case 'DropCreateDatabaseAlways':
-      return new DropCreateDatabaseAlways(dbOptions);
-    case 'UpdateDatabaseIfChanges':
-      return new UpdateDatabaseIfChanges(dbOptions);
-    default:
-      throw new Error("Invalid database strategy");
-  }
 }
 
 export const dropDBResources = async (configInstance: ConfigBuilder): Promise<void> => {

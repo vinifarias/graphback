@@ -1,6 +1,6 @@
-import { join, basename } from 'path';
-import { unlinkSync, writeFileSync, readFileSync } from 'fs';
+import { readFileSync, unlinkSync, writeFileSync } from 'fs';
 import { sync } from 'glob';
+import { basename, join } from 'path';
 
 export const removeFiles = async (...patterns: string[]) => {
   for (const pattern of patterns) {

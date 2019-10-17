@@ -1,3 +1,3 @@
 export * from './initialization';
 export * from './migrations';
-export * from './DatabaseOptions';
+export * from './DatabaseConnectionOptions';

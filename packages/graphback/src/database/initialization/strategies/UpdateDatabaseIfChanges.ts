@@ -1,13 +1,20 @@
-import { DatabaseInitializationStrategy } from '../DatabaseInitializationStrategy';
-import { DatabaseSchemaManager } from '../../migrations/DataResourcesManager';
-import { DatabaseOptions } from '../../DatabaseOptions';
-import { DatabaseContextProvider } from '../../migrations/DatabaseContextProvider';
-import { InputModelTypeContext } from '../../../input/ContextTypes';
 import { Change } from '@graphql-inspector/core';
+import { InputModelTypeContext } from '../../../input/ContextTypes';
+import { DatabaseConnectionOptions } from '../../DatabaseConnectionOptions';
+import { DatabaseContextProvider } from '../../migrations/DatabaseContextProvider';
+import { DatabaseSchemaManager } from '../../migrations/DataResourcesManager';
+import { DatabaseInitializationStrategy } from '../DatabaseInitializationStrategy';
 
+/**
+ * Database initialization strategy to only update the database schema if there are changes in the schema
+ *
+ * @export
+ * @class UpdateDatabaseIfChanges
+ * @implements {DatabaseInitializationStrategy}
+ */
 export class UpdateDatabaseIfChanges implements DatabaseInitializationStrategy {
   private schemaManager: DatabaseSchemaManager;
-  constructor(databaseOptions: DatabaseOptions) {
+  constructor(databaseOptions: DatabaseConnectionOptions) {
     this.schemaManager = new DatabaseSchemaManager(databaseOptions.client, databaseOptions.connectionOptions);
   }
 

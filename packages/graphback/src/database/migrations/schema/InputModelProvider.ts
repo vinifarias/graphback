@@ -1,7 +1,7 @@
-import {  SchemaProvider } from './SchemaProvider';
-import { buildSchemaText, removeFiles } from '../../../utils';
 import { writeFileSync } from 'fs';
 import { join } from 'path';
+import { buildSchemaText, removeFiles } from '../../../utils';
+import {  SchemaProvider } from './SchemaProvider';
 
 /**
  * Provides old and new schema from a local context

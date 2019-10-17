@@ -1,4 +1,9 @@
 import { PubSub } from 'graphql-subscriptions';
+import { DatabaseInitializationStrategy } from './database/initialization/DatabaseInitializationStrategy';
+import { DatabaseContextProvider, DefaultDataContextProvider } from './database/migrations/DatabaseContextProvider';
+import { IDataLayerResourcesManager } from './database/migrations/DataResourcesManager';
+import { GraphQLSchemaManager } from './database/migrations/schema/GraphQLSchemaManager';
+import { SchemaProvider } from './database/migrations/schema/SchemaProvider';
 import { Client, ClientGenerator } from './generators/client';
 import { LayeredRuntimeResolverGenerator, LegacyResolverGenerator } from './generators/resolvers';
 import { RuntimeResolversDefinition } from './generators/resolvers/layered/RuntimeResolversDefinition';
@@ -9,11 +14,6 @@ import { createInputContext } from './input/ContextCreator';
 import { InputModelTypeContext, OBJECT_TYPE_DEFINITION } from './input/ContextTypes';
 import { GraphbackDataProvider } from './layers/data/GraphbackDataProvider';
 import { DefaultCRUDService } from './layers/service/DefaultCRUDService';
-import { DatabaseContextProvider, DefaultDataContextProvider } from './database/migrations/DatabaseContextProvider';
-import { IDataLayerResourcesManager } from './database/migrations/DataResourcesManager';
-import { SchemaProvider } from './database/migrations/schema/SchemaProvider';
-import { DatabaseInitializationStrategy } from './database/initialization/DatabaseInitializationStrategy';
-import { GraphQLSchemaManager } from './database/migrations/schema/GraphQLSchemaManager';
 
 /**
  * GraphQLBackend

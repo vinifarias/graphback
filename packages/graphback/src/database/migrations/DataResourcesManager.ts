@@ -1,14 +1,11 @@
 // tslint:disable: await-promise
+import { Change, ChangeType } from '@graphql-inspector/core';
+import { unlinkSync } from 'fs';
+import { GlobSync } from 'glob';
 import * as Knex from 'knex';
 import { InputModelFieldContext, InputModelTypeContext } from '../../input/ContextTypes';
 import { logger } from '../../utils/logger';
 import { DatabaseContextProvider } from './DatabaseContextProvider';
-import { join } from 'path';
-import { sync, GlobSync } from 'glob';
-import { diff, Change, ChangeType } from '@graphql-inspector/core';
-import { buildSchema } from 'graphql';
-import {buildSchemaFromDir } from '../../utils';
-import { existsSync, mkdirSync, unlinkSync, writeFileSync } from 'fs';
 /**
  * Represents update for data type
  */
@@ -41,8 +38,6 @@ export interface IDataLayerResourcesManager {
    */
   updateDatabaseResources(context: DatabaseContextProvider,
     types: InputModelTypeContext[], changes: Change[]): Promise<void>;
-
-  createMigration(modelDir: string, migrationsDir: string): Promise<Change[]>;
 }
 
 /**
@@ -96,33 +91,6 @@ export class DatabaseSchemaManager implements IDataLayerResourcesManager {
   ) {
     this.dbConnection = createDBConnectionKnex(client, dbConnectionOptions);
     this.client = client;
-  }
-
-  public async createMigration(
-    schemaText: string,
-    migrationsDir: string,
-  ): Promise<Change[]> {
-    if (!existsSync(migrationsDir)) {
-      mkdirSync(migrationsDir);
-    }
-
-    const oldSchema = buildSchemaFromDir(migrationsDir);
-    const newSchema = buildSchema(schemaText);
-
-    const changes = diff(oldSchema, newSchema);
-
-    if (changes.length > 0) {
-      const schemaPath = join(migrationsDir, '*.graphql');
-      const files = sync(schemaPath);
-
-      for (const gqlFile of files) {
-        unlinkSync(gqlFile);
-      }
-
-      writeFileSync(join(migrationsDir, 'Model.graphql'), schemaText);
-    }
-
-    return Promise.resolve(changes);
   }
 
   public async createDatabaseResources(context: DatabaseContextProvider, types: InputModelTypeContext[]): Promise<void> {
@@ -357,7 +325,6 @@ export class DatabaseSchemaManager implements IDataLayerResourcesManager {
 
     const gqlField = t.fields.find((f: InputModelFieldContext) => f.name === field);
 
-    // TODO: Chalk logs
     if (!hasTable) {
       logger.warn(`Table does not exist! Cannot add field to table ${tableName}`);
     } else {
@@ -400,12 +367,12 @@ export class DatabaseSchemaManager implements IDataLayerResourcesManager {
     }
   }
 
-  // TODO: Improve this
+  // tslint:disable-next-line: no-any
   private handleError(err: any): void {
     if (err.code === 'ECONNREFUSED') {
-      console.log('Database not running. Run docker-compose up -d or docker-compose start to start the database.')
+      logger.warn('Database not running. Run docker-compose up -d or docker-compose start to start the database.')
     } else {
-      console.log(err.message)
+      logger.warn(err.message)
     }
     process.exit(0)
   }

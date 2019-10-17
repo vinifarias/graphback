@@ -1,9 +1,9 @@
-import { INTERFACE_TYPE_DEFINITION, OBJECT_TYPE_DEFINITION, OBJECT_TYPE_EXTENSION, InputModelTypeContext } from '../input/ContextTypes';
-import { sync } from 'glob';
-import { join } from 'path';
 import { readFileSync } from 'fs';
-import { GraphQLSchema, buildSchema } from 'graphql';
+import { sync } from 'glob';
+import { buildSchema, GraphQLSchema } from 'graphql';
+import { join } from 'path';
 import { ResolverType } from '../generators/resolvers';
+import { InputModelTypeContext, INTERFACE_TYPE_DEFINITION, OBJECT_TYPE_DEFINITION, OBJECT_TYPE_EXTENSION } from '../input/ContextTypes';
 
 export const getFieldName = (typeName: string, action: ResolverType, plural: string = ''): string => {
   const upperCasedType = typeName.charAt(0).toUpperCase() + typeName.substr(1);
@@ -46,6 +46,7 @@ export const buildSchemaText = (schemaDir: string): string => {
   }
 
   const schemaText = files
+    // tslint:disable-next-line: no-unnecessary-callback-wrapper
     .map((f: string) => readFileSync(f))
     .join('\n');
 

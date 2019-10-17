@@ -6,7 +6,6 @@ import config from "./config/config"
 import { connect } from "./db"
 import { resolvers, schemaString } from "./mapping"
 import { pubsub } from './subscriptions'
-import { createRuntime } from './runtime'
 
 
 async function start() {
@@ -21,22 +20,13 @@ async function start() {
 
   const typeDefs = gql`${schemaString}`
 
-  let executableSchema;
-  // Temporary change for testing
-  if (config.runtime) {
-    executableSchema = await createRuntime(client);
-  } else {
-    executableSchema = makeExecutableSchema({
-      typeDefs,
-      resolvers,
-      resolverValidationOptions: {
-        requireResolversForResolveType: false
-      }
-    });
-  }
-
-
-
+  const executableSchema = makeExecutableSchema({
+    typeDefs,
+    resolvers,
+    resolverValidationOptions: {
+      requireResolversForResolveType: false
+    }
+  });
 
   const apolloConfig = {
     schema: executableSchema,

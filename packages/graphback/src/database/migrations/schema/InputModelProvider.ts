@@ -1,7 +1,7 @@
-import { writeFileSync } from 'fs';
+import { existsSync, mkdirSync, writeFileSync } from 'fs';
 import { join } from 'path';
 import { buildSchemaText, removeFiles } from '../../../utils';
-import {  SchemaProvider } from './SchemaProvider';
+import { SchemaProvider } from './SchemaProvider';
 
 /**
  * Provides old and new schema from a local filesystem
@@ -27,6 +27,10 @@ export class InputModelProvider implements SchemaProvider {
   }
 
   public async updatePreviousSchema(newSchema: string) {
+    if (!existsSync(this.oldSchemaDir)) {
+      mkdirSync(this.oldSchemaDir);
+    }
+
     await removeFiles(join(this.oldSchemaDir, '*.graphql'));
     writeFileSync(join(this.oldSchemaDir, 'Previous.graphql'), newSchema);
   }

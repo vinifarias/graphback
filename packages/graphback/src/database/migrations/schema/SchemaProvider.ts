@@ -1,5 +1,5 @@
 export interface SchemaProvider {
-  getNewSchemaText(): string;
-  getOldSchemaText(): string;
+  getCurrentSchemaText(): string;
+  getPreviousSchemaText(): string;
   updateOldSchema(newSchema: string): void;
 }

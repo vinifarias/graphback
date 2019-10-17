@@ -18,16 +18,16 @@ export class InputModelProvider implements SchemaProvider {
     this.newSchemaDir = newSchemaDir;
   }
 
-  public getNewSchemaText(): string {
+  public getCurrentSchemaText(): string {
     return buildSchemaText(this.newSchemaDir);
   }
 
-  public getOldSchemaText(): string {
+  public getPreviousSchemaText(): string {
     return buildSchemaText(this.oldSchemaDir);
   }
 
   public async updateOldSchema(newSchema: string) {
     await removeFiles(join(this.oldSchemaDir, '*.graphql'));
-    writeFileSync(join(this.oldSchemaDir, 'OldSchema.graphql'), newSchema);
+    writeFileSync(join(this.oldSchemaDir, 'Previous.graphql'), newSchema);
   }
 }

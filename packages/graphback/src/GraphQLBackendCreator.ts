@@ -32,7 +32,7 @@ export class GraphQLBackendCreator {
    */
   constructor(schemaContext: SchemaProvider, config: GraphQLGeneratorConfig) {
     this.graphQLSchemaManager = new GraphQLSchemaManager({ provider: schemaContext });
-    this.inputContext = createInputContext(schemaContext.getNewSchemaText(), config);
+    this.inputContext = createInputContext(schemaContext.getCurrentSchemaText(), config);
     this.dbContextProvider = new DefaultDataContextProvider();
   }
 

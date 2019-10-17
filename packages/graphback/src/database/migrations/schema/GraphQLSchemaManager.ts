@@ -18,12 +18,12 @@ export class GraphQLSchemaManager {
   private newSchemaText: string;
   constructor(options: SchemaManagerOptions) {
     this.provider = options.provider;
-    this.oldSchemaText = this.provider.getOldSchemaText();
-    this.newSchemaText = this.provider.getNewSchemaText();
+    this.oldSchemaText = this.provider.getPreviousSchemaText();
+    this.newSchemaText = this.provider.getCurrentSchemaText();
   }
 
   /**
-   * 
+   *
    *
    * @returns {Change[]}
    * @memberof GraphQLSchemaManager
